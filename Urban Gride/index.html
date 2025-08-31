@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weather Portal ⚡</title>
+
+    <!-- Simplified "Add to Home Screen" Icon setup (just a single logo.png) -->
+    <meta name="theme-color" content="#00BCD4"> <!-- Theme color for browser UI -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WeatherApp">
+    <!-- Main Apple Touch Icon (will also be used by Android and others) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/logo.jpg"> 
+    <!-- Now pointing to the single logo.png -->
+
+    <!-- Favicon (for browser tabs) -->
+    <link rel="icon" type="image/png" href="images/logo.jpg" sizes="32x32">
+    <link rel="icon" type="image/png" href="images/logo.jpg" sizes="16x16">
+    <!-- Now pointing to the single logo.png -->
+
+    <!-- Google Fonts for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /*
+        ====================
+        CSS STYLING STARTS HERE
+        ====================
+        */
+
+        /* Global Resets & Typography */
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif; /* General text font */
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #ffffff; /* Default white text for readability on transparent elements */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            position: relative;
+        }
+
+        /* Splash Screen Styling */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* Slightly darker transparent overlay for splash */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* Highest z-index to be on top of everything */
+            opacity: 1; /* Initially visible */
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out; /* For smooth fade out */
+            visibility: visible;
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden; /* Hide completely after transition */
+            pointer-events: none; /* Allows clicks through after hidden */
+        }
+
+        .splash-logo {
+            width: 150px; /* Adjust logo size as needed */
+            height: 150px;
+            object-fit: contain; /* Ensures logo fits without distortion */
+            animation: pulseLogo 2s infinite ease-in-out; /* Pulsating effect */
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.7)); /* Bright glow effect */
+        }
+
+        @keyframes pulseLogo {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #00BCD4; /* Accent color */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        /* Background Video Element */
+        #video-background {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -4; /* Furthest back */
+            background-size: cover;
+            filter: brightness(0.8) saturate(1.1); 
+            transition: filter 0.5s ease;
+        }
+        
+        /* Darker Overlay for readability and depth */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.05); /* Very light dark overlay */
+            z-index: -2; /* Above video */
+            opacity: 1; /* Always visible */
+        }
+
+        /* Weather App Container - The central element */
+        .weather-app {
+            background: rgba(255, 255, 255, 0.08); /* Subtle white tint, semi-transparent */
+            backdrop-filter: blur(18px) saturate(1.5); /* Frosted glass effect */
+            -webkit-backdrop-filter: blur(18px) saturate(1.5); /* For Safari */
+            padding: 30px 40px; /* Adjusted padding */
+            border-radius: 15px; /* Consistent border-radius */
+            width: 90%;
+            max-width: 480px; /* More compact on larger screens/laptops */
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), /* Soft, diffused shadow */
+                        0 0 0 1px rgba(255, 255, 255, 0.2); /* Very light, transparent border */
+            margin: 20px;
+            animation: fadeInLift 0.8s ease-out forwards;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease;
+        }
+
+        .weather-app:hover {
+            transform: translateY(-5px); /* Subtle lift on hover */
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15),
+                        0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes fadeInLift {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Search Container Styling */
+        .search-container {
+            position: relative;
+            margin-bottom: 35px; /* Adjusted margin */
+            width: 100%;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15); /* Lighter transparent background for input */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 20px; /* Consistent border-radius */
+            padding: 8px 15px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15); /* Subtle inner shadow */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Light transparent border */
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus-within {
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(0, 188, 212, 0.3); /* Focus ring */
+            border-color: rgba(0, 188, 212, 0.5); /* Accent color border */
+        }
+
+        .search-bar input {
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #ffffff; /* White text for better contrast on darker transparent input */
+            padding: 8px 12px; /* Adjusted padding */
+            flex: 1;
+            font-size: 17px; /* Adjusted font size */
+            font-weight: 400;
+        }
+
+        .search-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.6); /* Lighter placeholder text for transparent input */
+        }
+
+        .search-bar button {
+            border: 0;
+            outline: 0;
+            background: #00BCD4; /* Vibrant teal/cyan button */
+            border-radius: 50%;
+            width: 48px; /* Slightly smaller button */
+            height: 48px; /* Slightly smaller button */
+            cursor: pointer;
+            font-size: 20px; /* Adjusted icon size */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
+            transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .search-bar button:hover {
+            background: #00AABF; /* Slightly darker teal on hover */
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 188, 212, 0.4);
+        }
+
+        /* Suggestions List Styling */
+        #suggestions-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 0 0 15px 15px; /* Consistent border-radius */
+            max-height: 180px; /* Adjusted max height */
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-top: none;
+        }
+        #suggestions-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #suggestions-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        #suggestions-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3); /* White transparent scrollbar */
+            border-radius: 10px;
+        }
+        #suggestions-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        #suggestions-container li {
+            padding: 10px 18px; /* Adjusted padding */
+            color: #ffffff; /* White text for suggestions */
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+            font-size: 0.95em; /* Adjusted font size */
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle transparent separator */
+        }
+
+        #suggestions-container li:last-child {
+            border-bottom: none;
+        }
+
+        #suggestions-container li:hover,
+        #suggestions-container li.active {
+            background: rgba(0, 188, 212, 0.3); /* Teal transparent on hover/active */
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* Error Message Styling */
+        .error-message {
+            text-align: center;
+            margin-top: -20px; /* Adjusted margin */
+            margin-bottom: 25px; /* Adjusted margin */
+            color: #FFEB3B; /* Yellow for error on dark transparent background */
+            font-size: 1em;
+            font-weight: 500;
+            display: none;
+            animation: shake 0.5s ease-in-out;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5); /* Added text-shadow for readability */
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /* Weather Display Styling */
+        .weather-display {
+            display: none;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .weather-icon {
+            width: 150px; /* Adjusted icon size */
+            margin-top: 20px; /* Adjusted margin */
+            margin-bottom: 25px; /* Adjusted margin */
+            filter: drop-shadow(0 8px 15px rgba(0,0,0,0.1));
+            animation: floatIcon 4s infinite ease-in-out alternate;
+        }
+
+        @keyframes floatIcon {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-8px); } /* Slightly reduced float */
+            100% { transform: translateY(0); }
+        }
+
+        .weather-display h1 {
+            font-family: 'Montserrat', sans-serif; /* Bolder font for temperature */
+            font-size: 75px; /* Adjusted font size */
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px; /* Adjusted margin */
+            color: #00FFFF; /* Bright Cyan for temperature */
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3), 0 0 10px rgba(0,255,255,0.5); /* Added glow */
+        }
+
+        .weather-display h2 {
+            font-family: 'Roboto', sans-serif;
+            font-size: 42px; /* Adjusted font size */
+            font-weight: 500;
+            margin-top: 5px;
+            margin-bottom: 30px; /* Adjusted margin */
+            color: #FFFFFF; /* White for city name */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .weather-description {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.25em; /* Adjusted font size */
+            font-weight: 400;
+            text-transform: capitalize;
+            margin-bottom: 35px; /* Adjusted margin */
+            color: #E0F2F7; /* Lighter color for description */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* Details (Humidity, Wind) Styling */
+        .details {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 10px;
+            margin-top: 35px; /* Adjusted margin */
+            flex-wrap: wrap;
+            border-top: 1px solid rgba(255, 255, 255, 0.2); /* Transparent separator */
+            padding-top: 25px; /* Adjusted padding */
+        }
+
+        .col {
+            display: flex;
+            align-items: center;
+            text-align: left;
+            flex-direction: column;
+            min-width: 140px; /* Adjusted min-width */
+            margin: 8px 0; /* Adjusted margin */
+        }
+
+        .col img {
+            width: 55px; /* Adjusted icon size */
+            margin-bottom: 10px; /* Adjusted margin */
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+        }
+
+        .col p {
+            font-family: 'Roboto', sans-serif;
+            font-size: 17px; /* Adjusted font size */
+            margin: 0;
+            font-weight: 400;
+            color: #E0F2F7; /* Lighter color for labels */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .humidity-value, .wind-speed {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 26px; /* Adjusted font size */
+            font-weight: 600;
+            margin-top: 6px; /* Adjusted margin */
+            color: #81D4FA; /* Light Blue for values */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Attribution Section Styling */
+        .attribution {
+            margin-top: 35px; /* Adjusted margin */
+            font-size: 0.85em; /* Adjusted font size */
+            color: rgba(255, 255, 255, 0.7); /* Lighter transparent color */
+            font-weight: 400;
+            line-height: 1.5;
+            animation: fadeIn 1.5s ease-out forwards;
+            padding-top: 18px; /* Adjusted padding */
+            border-top: 1px solid rgba(255, 255, 255, 0.15); /* Transparent separator */
+            font-family: 'Roboto', sans-serif;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Notification Message */
+        .notification-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 188, 212, 0.8); /* Teal transparent background */
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /*
+        ====================
+        Responsive Adjustments - Refined for Mobile
+        ====================
+        */
+
+        /* For Tablets and smaller laptops */
+        @media (max-width: 768px) {
+            .weather-app {
+                padding: 25px 30px; /* Reduced padding */
+                max-width: 420px; /* Adjusted max-width for tablets */
+            }
+            .weather-display h1 {
+                font-size: 65px; /* Reduced font size */
+            }
+            .weather-display h2 {
+                font-size: 36px; /* Reduced font size */
+                margin-bottom: 25px; /* Adjusted margin */
+            }
+            .weather-icon {
+                width: 140px; /* Reduced icon size */
+                margin-top: 15px;
+                margin-bottom: 20px;
+            }
+            .weather-description {
+                font-size: 1.15em;
+                margin-bottom: 30px;
+            }
+            .details {
+                flex-direction: row; /* Keep side-by-side if enough space */
+                justify-content: center;
+                gap: 15px;
+                margin-top: 30px;
+                padding-top: 20px;
+            }
+            .col {
+                min-width: unset; /* Allow flexible width */
+                margin: 8px;
+                flex-basis: 45%; /* Allow two columns */
+            }
+            .col img {
+                width: 48px;
+                margin-bottom: 8px;
+            }
+            .col p {
+                font-size: 15px;
+            }
+            .humidity-value, .wind-speed {
+                font-size: 22px;
+            }
+            .attribution {
+                font-size: 0.8em;
+                margin-top: 30px;
+                padding-top: 15px;
+            }
+        }
+
+        /* For Large Phones (e.g., iPhone 12 Pro Max, Pixel 4 XL) */
+        @media (max-width: 550px) {
+            .weather-app {
+                padding: 20px 20px; /* Further reduced padding */
+                max-width: 90%; /* Ensure it fits smaller screens well */
+                border-radius: 12px; /* Consistent border-radius */
+            }
+            .search-container {
+                margin-bottom: 25px;
+            }
+            .search-bar {
+                padding: 7px 10px;
+                border-radius: 18px; /* Consistent border-radius */
+            }
+            .search-bar input {
+                font-size: 15px;
+                padding: 6px 8px;
+            }
+            .search-bar button {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+            #suggestions-container {
+                max-height: 160px;
+                border-radius: 0 0 12px 12px; /* Consistent radius */
+            }
+            #suggestions-container li {
+                padding: 9px 15px;
+                font-size: 0.9em;
+            }
+            .weather-icon {
+                width: 120px;
+                margin-top: 15px;
+                margin-bottom: 20px;
+            }
+            .weather-display h1 {
+                font-size: 55px;
+            }
+            .weather-display h2 {
+                font-size: 32px;
+                margin-bottom: 20px;
+            }
+            .weather-description {
+                font-size: 1.1em;
+                margin-bottom: 25px;
+            }
+            .details {
+                flex-direction: column; /* Stack vertically on smaller mobiles */
+                gap: 18px; /* Adjusted gap */
+                margin-top: 25px;
+                padding-top: 20px;
+            }
+            .col {
+                flex-direction: row; /* Details side-by-side with icon */
+                align-items: center;
+                text-align: left;
+                width: 100%; /* Take full width */
+                justify-content: center; /* Center content horizontally */
+                margin: 0;
+            }
+            .col img {
+                margin-right: 12px;
+                margin-bottom: 0;
+                width: 40px;
+            }
+            .col p { /* Ensure 'Humidity'/'Wind Speed' text aligns well */
+                font-size: 16px;
+            }
+            .humidity-value, .wind-speed {
+                font-size: 20px;
+            }
+            .attribution {
+                font-size: 0.75em;
+                margin-top: 25px;
+                padding-top: 15px;
+            }
+        }
+
+        /* For Smaller Phones (e.g., iPhone SE, older Androids) */
+        @media (max-width: 400px) {
+            .weather-app {
+                padding: 15px 10px;
+                border-radius: 10px; /* Further reduced border-radius */
+            }
+            .search-container {
+                margin-bottom: 20px;
+            }
+            .search-bar {
+                padding: 6px 8px;
+                border-radius: 16px;
+            }
+            .search-bar input {
+                font-size: 13px;
+                padding: 5px 8px;
+            }
+            .search-bar button {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+            #suggestions-container {
+                max-height: 140px;
+                border-radius: 0 0 10px 10px;
+            }
+            #suggestions-container li {
+                padding: 7px 10px;
+                font-size: 0.85em;
+            }
+            .weather-display h1 {
+                font-size: 45px;
+            }
+            .weather-display h2 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+            .weather-icon {
+                width: 100px;
+                margin-top: 10px;
+                margin-bottom: 15px;
+            }
+            .weather-description {
+                font-size: 1em;
+                margin-bottom: 20px;
+            }
+            .details {
+                gap: 15px;
+                margin-top: 20px;
+                padding-top: 15px;
+            }
+            .col {
+                flex-direction: row;
+                justify-content: center;
+            }
+            .col img {
+                width: 35px;
+                margin-right: 10px;
+            }
+            .col p {
+                font-size: 14px;
+            }
+            .humidity-value, .wind-speed {
+                font-size: 18px;
+            }
+            .attribution {
+                font-size: 0.7em;
+                margin-top: 20px;
+                padding-top: 10px;
+            }
+        }
+
+        /*
+        ====================
+        CSS STYLING ENDS HERE
+        ====================
+        */
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <!-- Logo for the splash screen -->
+        <img src="images/logo.jpg" alt="Weather App Logo" class="splash-logo"> 
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Background Video Element -->
+    <video autoplay loop muted playsinline id="video-background">
+        <source src="background-2.mp4" type="video/mp4">
+        <!-- Fallback for browsers that don't support video or if file is missing -->
+        <img src="https://images.pexels.com/photos/1036323/pexels-photo-1036323.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Background Fallback Image" style="position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -4; background-size: cover; filter: brightness(0.5) saturate(1.3) hue-rotate(15deg);">
+    </video>
+    <div class="overlay"></div> <!-- Dark overlay for readability -->
+
+    <div class="weather-app">
+        <div class="search-container">
+            <div class="search-bar">
+                <input type="text" id="location-input" placeholder="Enter city name (e.g., Delhi, Mumbai)" spellcheck="false" autocomplete="off">
+                <button id="search-button"><i class="fas fa-search"></i></button>
+            </div>
+            <ul id="suggestions-container"></ul> <!-- Suggestions list -->
+        </div>
+
+        <div class="error-message" id="error-message">
+            <p>City not found! Please enter a valid name.</p>
+        </div>
+
+        <div class="weather-display" id="weather-display-section">
+            <img src="images/clear.png" class="weather-icon" id="weather-icon" alt="Weather Icon">
+            <h1 class="temp" id="temperature">--°C</h1>
+            <h2 class="city" id="city-name"></h2>
+            <p class="weather-description" id="weather-description">Loading...</p>
+
+            <div class="details">
+                <div class="col">
+                    <img src="images/humidity.png" alt="Humidity Icon">
+                    <div>
+                        <p class="humidity-value" id="humidity-value">--%</p>
+                        <p>Humidity</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <img src="images/wind.png" alt="Wind Speed Icon">
+                    <div>
+                        <p class="wind-speed" id="wind-speed">-- km/h</p>
+                        <p>Wind Speed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attribution Section -->
+        <div class="attribution">
+            <p>Designed and Developed by: Shashwat Shukla</p>
+        </div>
+    </div>
+
+    <!-- Notification Message Area -->
+    <div id="notification" class="notification-message"></div>
+
+    <script>
+        /*
+        ====================
+        JAVASCRIPT STARTS HERE
+        ====================
+        */
+
+        // Your WeatherAPI.com API key
+        const apiKey = "ed27d0dc3f64472b9a4180942253008"; 
+        const apiUrl = "https://api.weatherapi.com/v1/current.json?key=";
+
+        const locationInput = document.getElementById("location-input");
+        const searchButton = document.getElementById("search-button");
+        const weatherIcon = document.getElementById("weather-icon");
+        const errorMessage = document.getElementById("error-message");
+        const weatherDisplaySection = document.getElementById("weather-display-section");
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const notificationElement = document.getElementById('notification');
+        const splashScreen = document.getElementById('splash-screen'); // Get splash screen element
+
+        // Image paths for weather icons - ENSURE THESE IMAGES EXIST IN AN 'images' FOLDER
+        const iconPaths = {
+            "Clear": "images/clear.png",
+            "Sunny": "images/sunny.png", 
+            "Partly cloudy": "images/clouds.png",
+            "Cloudy": "images/clouds.png",
+            "Overcast": "images/clouds.png",
+            "Mist": "images/mist.png",
+            "Fog": "images/mist.png",
+            "Freezing fog": "images/mist.png",
+            "Patchy rain possible": "images/drizzle.png",
+            "Light rain": "images/drizzle.png",
+            "Moderate rain at times": "images/rain.png",
+            "Moderate rain": "images/rain.png",
+            "Heavy rain at times": "images/rain.png",
+            "Heavy rain": "images/rain.png",
+            "Light drizzle": "images/drizzle.png",
+            "Freezing drizzle": "images/drizzle.png",
+            "Light freezing rain": "images/drizzle.png",
+            "Moderate or heavy freezing rain": "images/rain.png",
+            "Light snow": "images/snow.png",
+            "Moderate snow": "images/snow.png",
+            "Heavy snow": "images/snow.png",
+            "Blizzard": "images/snow.png",
+            "Thundery outbreaks possible": "images/rain.png", 
+            "Torrential rain shower": "images/rain.png",
+            "Default": "images/clear.png" // Fallback icon
+        };
+
+        // Data for suggestions (Indian states and capitals/major cities, and local areas)
+        const indianCitiesAndStates = [
+            "Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Pune", "Jaipur", "Lucknow",
+            "Patna", "Chandigarh", "Bhopal", "Thiruvananthapuram", "Amaravati", "Itanagar", "Dispur", "Raipur",
+            "Panaji", "Gandhinagar", "Shimla", "Ranchi", "Srinagar", "Jammu", "Leh", "Kavaratti", "Puducherry",
+            "Agartala", "Dehradun", "Gairsain", "Shillong", "Imphal", "Aizawl", "Kohima", "Bhubaneswar", "Amritsar",
+            "Jodhpur", "Udaipur", "Mysore", "Coimbatore", "Visakhapatnam", "Nagpur", "Indore", "Surat", "Vadodara",
+            "Ghaziabad", "Faridabad", "Ludhiana", "Agra", "Nashik", "Rajkot", "Varanasi", "Allahabad", "Aurangabad",
+            "Madurai", "Tiruchirappalli", "Kochi", "Gurugram", "Noida", "Jamshedpur", "Bagdogra", "Port Blair",
+            "Gangtok", // Sikkim capital
+            "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+            "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+            "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+            "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+            "Andaman and Nicobar Islands", "Dadra and Nagar Haveli and Daman & Diu", "Delhi", "Lakshadweep", "Puducherry", "Ladakh", "Jammu and Kashmir",
+            // Added Nalasopara and nearby areas for better direct search support
+            "Nalasopara", "Virar", "Vasai", "Palghar", "Bhayandar", "Mira Road", "Dahisar", "Borivali", "Bandra", "Andheri", "Thane", "Kalyan", "Dombivli", "Navi Mumbai", "Panvel" 
+        ].sort(); // Sort for better user experience
+
+        function showNotification(message, duration = 3000) {
+            notificationElement.textContent = message;
+            notificationElement.style.display = 'block';
+            // Clear any previous timeout to ensure a new message is shown completely
+            clearTimeout(notificationElement.hideTimeout); 
+            notificationElement.hideTimeout = setTimeout(() => {
+                notificationElement.style.display = 'none';
+            }, duration);
+        }
+
+        // Function to hide the splash screen
+        function hideSplashScreen() {
+            splashScreen.classList.add('hidden');
+            // Optionally, remove the element completely after the transition to free up resources
+            // setTimeout(() => {
+            //     splashScreen.remove();
+            // }, 500); // Match CSS transition duration
+        }
+
+
+        async function checkWeather(cityOrCoords, isGeolocation = false) {
+            errorMessage.style.display = "none";
+            weatherDisplaySection.style.display = "none";
+            suggestionsContainer.style.display = "none"; // Hide suggestions when fetching weather
+
+            if (cityOrCoords.trim() === "") {
+                errorMessage.querySelector('p').textContent = "Please enter a city name.";
+                errorMessage.style.display = "block";
+                hideSplashScreen(); // Hide splash screen even if input is empty
+                return;
+            }
+
+            try {
+                console.log(`Fetching weather for: ${cityOrCoords} (Is Geolocation: ${isGeolocation})`);
+                const response = await fetch(`${apiUrl}${apiKey}&q=${cityOrCoords}`);
+
+                if (!response.ok) {
+                    if (response.status === 400) {
+                        errorMessage.querySelector('p').textContent = "City not found! Please enter a valid name.";
+                    } else if (response.status === 401 || response.status === 403) {
+                         errorMessage.querySelector('p').textContent = "Invalid or expired API key. Please check your key on WeatherAPI.com.";
+                    }
+                    else {
+                        errorMessage.querySelector('p').textContent = "Error fetching weather data. Please try again.";
+                    }
+                    errorMessage.style.display = "block";
+                    notificationElement.style.display = 'none'; 
+                    clearTimeout(notificationElement.hideTimeout);
+                    hideSplashScreen(); // Hide splash screen on error
+                    return;
+                }
+
+                const data = await response.json();
+                console.log("Weather API Response:", data); 
+
+                document.getElementById("city-name").innerHTML = data.location.name;
+                document.getElementById("temperature").innerHTML = Math.round(data.current.temp_c) + "°C";
+                document.getElementById("humidity-value").innerHTML = data.current.humidity + "%";
+                document.getElementById("wind-speed").innerHTML = Math.round(data.current.wind_kph) + " km/h";
+                document.getElementById("weather-description").innerHTML = data.current.condition.text;
+
+                const weatherConditionText = data.current.condition.text;
+                let iconToUse = iconPaths["Default"]; 
+                for (const key in iconPaths) {
+                    if (weatherConditionText.toLowerCase().includes(key.toLowerCase())) {
+                        iconToUse = iconPaths[key];
+                        if (weatherConditionText.toLowerCase() === key.toLowerCase()) {
+                            break; 
+                        }
+                    }
+                }
+                weatherIcon.src = iconToUse;
+                
+                weatherDisplaySection.style.display = "block";
+                errorMessage.style.display = "none";
+                
+                if (isGeolocation) {
+                    showNotification(`Showing weather for your detected location: ${data.location.name}.`, 4000);
+                } else {
+                    notificationElement.style.display = 'none'; 
+                    clearTimeout(notificationElement.hideTimeout);
+                }
+                hideSplashScreen(); // Hide splash screen on successful load
+
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+                errorMessage.querySelector('p').textContent = "Network error while fetching weather data. Please check your internet connection.";
+                errorMessage.style.display = "block";
+                notificationElement.style.display = 'none';
+                clearTimeout(notificationElement.hideTimeout);
+                hideSplashScreen(); // Hide splash screen on network error
+            }
+        }
+
+        // --- Geolocation Logic ---
+        function detectLocation() {
+            showNotification("Detecting your location...", 5000); 
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        console.log(`User's detected coordinates: Latitude ${lat}, Longitude ${lon}`); 
+                        await checkWeather(`${lat},${lon}`, true); 
+                    },
+                    (error) => {
+                        console.error("Geolocation error:", error);
+                        let message = "Location access denied.";
+                        if (error.code === error.POSITION_UNAVAILABLE) {
+                            message = "Location information is unavailable.";
+                        } else if (error.code === error.TIMEOUT) {
+                            message = "The request to get user location timed out.";
+                        }
+                        showNotification(`${message} Showing weather for Mumbai.`, 4000);
+                        checkWeather("Mumbai"); 
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } 
+                );
+            } else {
+                showNotification("Geolocation is not supported by your browser. Showing weather for Mumbai.", 4000);
+                checkWeather("Mumbai"); 
+            }
+        }
+        // --- End Geolocation Logic ---
+
+        // --- Autocomplete/Suggestions Logic ---
+        let currentActiveSuggestion = -1; 
+
+        function showSuggestions(inputVal) {
+            suggestionsContainer.innerHTML = ''; 
+            currentActiveSuggestion = -1;
+
+            if (inputVal.length < 2) { 
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+
+            const filteredSuggestions = indianCitiesAndStates.filter(location => 
+                location.toLowerCase().includes(inputVal.toLowerCase())
+            );
+
+            if (filteredSuggestions.length > 0) {
+                filteredSuggestions.slice(0, 10).forEach((suggestion) => { 
+                    const li = document.createElement('li');
+                    li.textContent = suggestion;
+                    li.addEventListener('click', () => {
+                        locationInput.value = suggestion;
+                        checkWeather(suggestion);
+                        suggestionsContainer.style.display = 'none';
+                    });
+                    suggestionsContainer.appendChild(li);
+                });
+                suggestionsContainer.style.display = 'block';
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+            notificationElement.style.display = 'none'; 
+            clearTimeout(notificationElement.hideTimeout);
+        }
+
+        locationInput.addEventListener('input', () => {
+            showSuggestions(locationInput.value);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!locationInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        locationInput.addEventListener('keydown', (e) => {
+            const items = suggestionsContainer.querySelectorAll('li');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault(); 
+                currentActiveSuggestion = (currentActiveSuggestion + 1) % items.length;
+                highlightSuggestion(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault(); 
+                currentActiveSuggestion = (currentActiveSuggestion - 1 + items.length) % items.length;
+                highlightSuggestion(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault(); 
+                if (currentActiveSuggestion > -1) {
+                    items[currentActiveSuggestion].click(); 
+                } else {
+                    searchButton.click(); 
+                }
+            }
+        });
+
+        function highlightSuggestion(items) {
+            items.forEach((item, index) => {
+                item.classList.remove('active');
+                if (index === currentActiveSuggestion) {
+                    item.classList.add('active');
+                    locationInput.value = item.textContent; 
+                    item.scrollIntoView({ block: 'nearest' }); 
+                }
+            });
+        }
+        // --- End Autocomplete/Suggestions Logic ---
+
+
+        searchButton.addEventListener("click", () => {
+            checkWeather(locationInput.value);
+        });
+
+        locationInput.addEventListener("keypress", (event) => {
+            if (event.key === "Enter" && currentActiveSuggestion === -1) {
+                checkWeather(locationInput.value);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Splash screen is visible by default in HTML/CSS
+            detectLocation(); // Start detecting location
+        });
+
+        /*
+        ====================
+        JAVASCRIPT ENDS HERE
+        ====================
+        */
+    </script>
+</body>
+</html>
